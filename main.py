@@ -140,7 +140,7 @@ class GeneratorApp(QWidget):
         """Update the UI based on the selected generation type."""
         self.log_message(f"Selected Generation Type: {generation_type}")
         
-        self.current_generation_type = generation_typeaaa
+        self.current_generation_type = generation_type
         
         if generation_type == "Image Generation":
             self.prompt_label.show()
