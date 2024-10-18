@@ -1,0 +1,48 @@
+# Python related
+*.py[cod]
+__pycache__/
+*.pyo
+*.pyd
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+.env/
+.env
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# PyInstaller
+*.spec
+
+# Pytest
+.cache
+*.cover
+*.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+*.pot
+
+# IDE and Editor specific
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Miscellaneous
+*.log
+*.tmp
+*.bak
+*.swp
+*.swo
