@@ -1,6 +1,5 @@
 import sys
 import json
-import re
 from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit, QPushButton, QFileDialog, QGroupBox, QHBoxLayout, QMessageBox
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtCore import Qt
@@ -32,45 +31,11 @@ class GeneratorApp(QWidget):
         
         # Button for Image Generation
         self.image_gen_button = QPushButton("Image Generation")
-        self.image_gen_button.setStyleSheet("""
-            QPushButton {
-                background: linear-gradient(90deg, #4CAF50, #81C784); /* Green gradient */
-                color: white;
-                border: none;
-                padding: 10px;
-                border-radius: 10px; /* Rounded corners */
-                font-size: 16px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background: linear-gradient(90deg, #388E3C, #66BB6A); /* Darker green on hover */
-            }
-            QPushButton:pressed {
-                background: linear-gradient(90deg, #2E7D32, #4CAF50); /* Darker green when pressed */
-            }
-        """)
         self.image_gen_button.clicked.connect(lambda: self.set_generation_type("Image Generation"))
         button_layout.addWidget(self.image_gen_button)
 
         # Button for Recipe Generation
         self.recipe_gen_button = QPushButton("Recipe Generation")
-        self.recipe_gen_button.setStyleSheet("""
-            QPushButton {
-                background: linear-gradient(90deg, #2196F3, #64B5F6); /* Blue gradient */
-                color: white;
-                border: none;
-                padding: 10px;
-                border-radius: 10px; /* Rounded corners */
-                font-size: 16px;
-                font-weight: bold;
-            }
-            QPushButton:hover {
-                background: linear-gradient(90deg, #1976D2, #42A5F5); /* Darker blue on hover */
-            }
-            QPushButton:pressed {
-                background: linear-gradient(90deg, #1565C0, #2196F3); /* Darker blue when pressed */
-            }
-        """)
         self.recipe_gen_button.clicked.connect(lambda: self.set_generation_type("Recipe Generation"))
         button_layout.addWidget(self.recipe_gen_button)
 
@@ -135,6 +100,7 @@ class GeneratorApp(QWidget):
         # Initialize the UI based on the default selection
         self.current_generation_type = "Image Generation"
         self.set_generation_type("Image Generation")
+        self.log_output.hide()
 
     def set_generation_type(self, generation_type):
         """Update the UI based on the selected generation type."""
@@ -158,15 +124,82 @@ class GeneratorApp(QWidget):
             self.result_output.show()
             self.image_display_label.show()
             self.uploaded_image_label.show()
-            
+
+        # Update button styles based on the selected generation type
+        self.update_button_styles()
+
     def update_button_styles(self):
         """Update button styles based on the selected generation type."""
         if self.current_generation_type == "Image Generation":
-            self.image_gen_button.setStyleSheet("background-color: blue; color: white; border: none;")
-            self.recipe_gen_button.setStyleSheet("background-color: lightgray; border: none;")
+            self.image_gen_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #388E3C;
+                }
+                QPushButton:pressed {
+                    background-color: #2E7D32;
+                }
+            """)
+            self.recipe_gen_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #2196F3;
+                    color: white;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #1976D2;
+                }
+                QPushButton:pressed {
+                    background-color: #1565C0;
+                }
+            """)
         else:
-            self.image_gen_button.setStyleSheet("background-color: lightgray; border: none;")
-            self.recipe_gen_button.setStyleSheet("background-color: blue; color: white; border: none;")
+            self.recipe_gen_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #388E3C;
+                }
+                QPushButton:pressed {
+                    background-color: #2E7D32;
+                }
+            """)
+            self.image_gen_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #2196F3;
+                    color: white;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #1976D2;
+                }
+                QPushButton:pressed {
+                    background-color: #1565C0;
+                }
+            """)
 
     def upload_image(self):
         """Open a file dialog to upload an image and store its path."""
@@ -220,13 +253,17 @@ class GeneratorApp(QWidget):
             self.generate_button.setText("Generate")
 
     def display_image(self, pil_image):
-        """Convert and display the generated PIL image in the QLabel."""
+        """Display the generated image in the QLabel."""
         try:
-            image_qt = self.pil_to_qt(pil_image)
-            self.result_label.setPixmap(image_qt)
-            self.result_output.clear()
+            bytes_io = BytesIO()
+            pil_image.save(bytes_io, format='PNG')
+            bytes_io.seek(0)
+            pixmap = QPixmap()
+            pixmap.loadFromData(bytes_io.getvalue())
+            self.uploaded_image_label.setPixmap(pixmap.scaled(100, 100, Qt.KeepAspectRatio))
+            self.uploaded_image_label.setScaledContents(False)
         except Exception as e:
-            self.show_error_message(f'<font color="red">Failed to load image: {str(e)}</font>')
+            self.show_error_message(f"Failed to display generated image: {str(e)}")
             
     def display_recipe(self, recipe_response):
         """Display the generated recipe text as a formatted recipe."""
@@ -264,29 +301,16 @@ class GeneratorApp(QWidget):
         except Exception as e:
             raise Exception(f"Error formatting recipe: {str(e)}")
 
-    def pil_to_qt(self, pil_image):
-        """Convert a PIL image to QPixmap."""
-        bytes_io = BytesIO()
-        pil_image.save(bytes_io, format='PNG')
-        image_qt = QPixmap()
-        image_qt.loadFromData(bytes_io.getvalue())
-        return image_qt
-
     def show_error_message(self, message):
-        """Show a message box for error messages."""
+        """Show an error message dialog."""
         QMessageBox.critical(self, "Error", message)
-            
+
     def log_message(self, message):
-        """Append a log message to the log output box."""
+        """Log a message to the log output."""
         self.log_output.append(message)
 
 if __name__ == "__main__":
-    # Initialize the application
     app = QApplication(sys.argv)
-
-    # Create the main window and show it
     window = GeneratorApp()
     window.show()
-
-    # Run the application's main event loop
     sys.exit(app.exec())
