@@ -15,16 +15,24 @@ The Gen AI App is a versatile tool designed to leverage the power of generative 
 ## Run locally
 
 To set up the Gen AI App locally, follow these steps:
-
-1. **Install necessary package:**
+1. **Create virtual env**
+   ```bash
+   python -m venv venv
+   ```
+2. **Activate the virtual env**
+   ```bash
+   python -m venv venv
+   ```
+3. **Install necessary package:**
    ```bash
    pip install -r requirements.txt
    ```
-2. **Add api key in .env:**
+4. **Add api key in .env:**
    ```bash
    API_KEY=your_api_key_here
    ```
-3. **Run the app:**
+5. **Run the app:**
    ```bash
    python main.py
    ```
+run ```deactivate``` to exit virtual env
