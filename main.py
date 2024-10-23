@@ -1,17 +1,19 @@
-import sys
 import json
-from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QTextEdit, QPushButton, QFileDialog, QGroupBox, QHBoxLayout, QMessageBox
+import sys
+import time
+import multiprocessing
+
+from PySide6.QtWidgets import (
+    QApplication, QWidget, QVBoxLayout, QLabel,
+    QTextEdit, QPushButton, QFileDialog, QGroupBox,
+    QHBoxLayout, QMessageBox
+)
 from PySide6.QtGui import QPixmap, QIcon
 from PySide6.QtCore import Qt
 from io import BytesIO
 from image_generator import generate_image_from_prompt
 from recipe_generator import generate_recipe_from_prompt
-import os
-import google.generativeai as genai
-from dotenv import load_dotenv
-
-load_dotenv()
-genai.configure(api_key=os.getenv("API_KEY"))
+from auto_translator import run_translation, stop_translation
 
 class GeneratorApp(QWidget):
     def __init__(self):
@@ -28,16 +30,21 @@ class GeneratorApp(QWidget):
 
         # Horizontal layout for the buttons
         button_layout = QHBoxLayout()
-        
-        # Button for Image Generation
-        self.image_gen_button = QPushButton("Image Generation")
-        self.image_gen_button.clicked.connect(lambda: self.set_generation_type("Image Generation"))
-        button_layout.addWidget(self.image_gen_button)
 
         # Button for Recipe Generation
         self.recipe_gen_button = QPushButton("Recipe Generation")
         self.recipe_gen_button.clicked.connect(lambda: self.set_generation_type("Recipe Generation"))
         button_layout.addWidget(self.recipe_gen_button)
+        
+        # Button for Text Translation
+        self.translate_button = QPushButton("Text Translation")
+        self.translate_button.clicked.connect(lambda: self.set_generation_type("Text Translation"))
+        button_layout.addWidget(self.translate_button)
+        
+        # Button for Image Generation
+        self.image_gen_button = QPushButton("Image Generation")
+        self.image_gen_button.clicked.connect(lambda: self.set_generation_type("Image Generation"))
+        button_layout.addWidget(self.image_gen_button)
 
         # Add the button layout to the main layout
         self.layout.addLayout(button_layout)
@@ -66,6 +73,12 @@ class GeneratorApp(QWidget):
         self.generate_button.clicked.connect(self.generate_content)
         self.group_layout.addWidget(self.generate_button)
         
+        # Start Button (toggle button for start/stop)
+        self.start_button = QPushButton("Start")
+        self.start_button.setIcon(QIcon("icons/play.png"))
+        self.start_button.clicked.connect(self.toggle_process)
+        self.group_layout.addWidget(self.start_button)
+        
         # Add a label to display the uploaded image
         self.image_display_label = QLabel("Uploaded Image:")
         self.group_layout.addWidget(self.image_display_label)
@@ -80,6 +93,11 @@ class GeneratorApp(QWidget):
         self.result_label.setWordWrap(True)
         self.group_layout.addWidget(self.result_label)
 
+        self.translator_output = QTextEdit()
+        self.translator_output.setReadOnly(True)
+        self.translator_output.setPlaceholderText("The results will be displayed here...")
+        self.group_layout.addWidget(self.translator_output)
+        
         # Result Output Box
         self.result_output = QTextEdit()
         self.result_output.setReadOnly(True)
@@ -97,9 +115,12 @@ class GeneratorApp(QWidget):
         # To store the uploaded image path
         self.image_path = None
 
+        # Track whether the process is running
+        self.autotranslator_process = None
+
         # Initialize the UI based on the default selection
-        self.current_generation_type = "Image Generation"
-        self.set_generation_type("Image Generation")
+        self.current_generation_type = "Recipe Generation"
+        self.set_generation_type("Recipe Generation")
         self.log_output.hide()
 
     def set_generation_type(self, generation_type):
@@ -116,14 +137,28 @@ class GeneratorApp(QWidget):
             self.result_output.hide()
             self.image_display_label.hide()
             self.uploaded_image_label.hide()
+            self.start_button.hide()
+            self.translator_output.hide()
         elif generation_type == "Recipe Generation":
             self.prompt_label.hide()
             self.prompt_input.hide()
             self.generate_button.hide()
+            self.start_button.hide()
+            self.translator_output.hide()
             self.upload_button.show()
             self.result_output.show()
             self.image_display_label.show()
             self.uploaded_image_label.show()
+        elif generation_type == "Text Translation":
+            self.start_button.show()
+            self.translator_output.show()
+            self.generate_button.hide()
+            self.upload_button.hide()
+            self.result_output.hide()
+            self.image_display_label.hide()
+            self.uploaded_image_label.hide()
+            self.prompt_label.hide()
+            self.prompt_input.hide()
 
         # Update button styles based on the selected generation type
         self.update_button_styles()
@@ -165,7 +200,24 @@ class GeneratorApp(QWidget):
                     background-color: #1565C0;
                 }
             """)
-        else:
+            self.translate_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #2196F3;
+                    color: white;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #1976D2;
+                }
+                QPushButton:pressed {
+                    background-color: #1565C0;
+                }
+            """)
+        elif self.current_generation_type == "Recipe Generation":
             self.recipe_gen_button.setStyleSheet("""
                 QPushButton {
                     background-color: #4CAF50;
@@ -184,6 +236,75 @@ class GeneratorApp(QWidget):
                 }
             """)
             self.image_gen_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #2196F3;
+                    color: white;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #1976D2;
+                }
+                QPushButton:pressed {
+                    background-color: #1565C0;
+                }
+            """)
+            self.translate_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #2196F3;
+                    color: white;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #1976D2;
+                }
+                QPushButton:pressed {
+                    background-color: #1565C0;
+                }
+            """)
+        else:
+            self.translate_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #4CAF50;
+                    color: white;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #388E3C;
+                }
+                QPushButton:pressed {
+                    background-color: #2E7D32;
+                }
+            """)
+            self.image_gen_button.setStyleSheet("""
+                QPushButton {
+                    background-color: #2196F3;
+                    color: white;
+                    border: none;
+                    padding: 10px;
+                    border-radius: 10px;
+                    font-size: 16px;
+                    font-weight: bold;
+                }
+                QPushButton:hover {
+                    background-color: #1976D2;
+                }
+                QPushButton:pressed {
+                    background-color: #1565C0;
+                }
+            """)
+            self.recipe_gen_button.setStyleSheet("""
                 QPushButton {
                     background-color: #2196F3;
                     color: white;
@@ -244,6 +365,10 @@ class GeneratorApp(QWidget):
                 pil_image = generate_image_from_prompt(prompt)
                 self.display_image(pil_image)
 
+            elif generation_type == "Xunity Autotranslator":
+                translated_text = self.translate_text(prompt)
+                self.display_translation(prompt, translated_text)
+
         except Exception as e:
             self.show_error_message(f'Error: {str(e)}')
             self.log_message(f'<font color="red">Error occurred: {str(e)}</font>')
@@ -300,14 +425,40 @@ class GeneratorApp(QWidget):
             return formatted_recipe.strip()
         except Exception as e:
             raise Exception(f"Error formatting recipe: {str(e)}")
+        
+    def update_translator_output(self, output):
+        self.translator_output.append(f"Output received: {output}")
 
+    def toggle_process(self):
+        """Start or stop the translator process using multiprocessing."""
+        try:
+            if self.start_button.text() == "Start":
+                self.translator_output.append("Starting translation process...")
+                self.autotranslator_process = multiprocessing.Process(target=run_translation)
+                self.autotranslator_process.start()
+                self.start_button.setText("Stop")
+                self.start_button.setIcon(QIcon("icons/stop.png"))
+                self.translator_output.append("Translation process started.")
+            else:
+                self.translator_output.append("Stopping translation process...")
+                if self.autotranslator_process and self.autotranslator_process.is_alive():
+                    stop_translation()
+                    self.autotranslator_process.terminate()
+                    self.autotranslator_process.join()
+                self.start_button.setText("Start")
+                self.start_button.setIcon(QIcon("icons/play.png"))
+                self.translator_output.append("Translation process stopped.")
+        except Exception as e:
+            self.show_error_message(f'Failed to manage translation process: {str(e)}')
+            self.translator_output.append(f'<font color="red">Failed to manage translation process: {str(e)}</font>')
+        
     def show_error_message(self, message):
         """Show an error message dialog."""
         QMessageBox.critical(self, "Error", message)
 
     def log_message(self, message):
-        """Log a message to the log output."""
-        self.log_output.append(message)
+        """Log messages to the log output."""
+        self.log_output.append(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {message}")
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
