@@ -6,7 +6,7 @@ The Gen AI App is a versatile tool designed to leverage the power of generative 
 ## Features
 - **Generate Recipe from Image:** Upload an image, and the app will analyze it to provide a detailed recipe based on the contents.
 - **Generate Images:** Create unique images from text prompts (coming soon).
-- **Translate Text:** Translate text into different languages (coming soon).
+- **Translate Text:** HTTP server for xunity autotranslator to translate unity game.
 
 ## Tech Stack
 - PySide6
