@@ -2,7 +2,10 @@
 # to upgrade run pip3 install --upgrade -r requirements.txt
 
 PySide6
+Flask
 Pillow
 python-dotenv
+gevent
+pypinyin
 google-generativeai
 git+https://github.com/google-gemini/generative-ai-python@imagen
