@@ -21,7 +21,11 @@ To set up the Gen AI App locally, follow these steps:
    ```
 2. **Activate the virtual env**
    ```bash
+   # windows
    .\venv\Scripts\activate
+
+   # macos/linux
+   source venv/bin/activate
    ```
 3. **Install necessary package:**
    ```bash
