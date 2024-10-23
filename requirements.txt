@@ -8,4 +8,5 @@ python-dotenv
 gevent
 pypinyin
 google-generativeai
+PyInstaller
 git+https://github.com/google-gemini/generative-ai-python@imagen
