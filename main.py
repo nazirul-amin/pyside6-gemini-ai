@@ -44,7 +44,9 @@ class GeneratorApp(QWidget):
         # Button for Image Generation
         self.image_gen_button = QPushButton("Image Generation")
         self.image_gen_button.clicked.connect(lambda: self.set_generation_type("Image Generation"))
+        self.image_gen_button.setEnabled(False)
         button_layout.addWidget(self.image_gen_button)
+
 
         # Add the button layout to the main layout
         self.layout.addLayout(button_layout)
@@ -168,7 +170,7 @@ class GeneratorApp(QWidget):
         if self.current_generation_type == "Image Generation":
             self.image_gen_button.setStyleSheet("""
                 QPushButton {
-                    background-color: #4CAF50;
+                    background-color: #B7B7B7;
                     color: white;
                     border: none;
                     padding: 10px;
@@ -237,7 +239,7 @@ class GeneratorApp(QWidget):
             """)
             self.image_gen_button.setStyleSheet("""
                 QPushButton {
-                    background-color: #2196F3;
+                    background-color: #B7B7B7;
                     color: white;
                     border: none;
                     padding: 10px;
@@ -289,7 +291,7 @@ class GeneratorApp(QWidget):
             """)
             self.image_gen_button.setStyleSheet("""
                 QPushButton {
-                    background-color: #2196F3;
+                    background-color: #B7B7B7;
                     color: white;
                     border: none;
                     padding: 10px;
@@ -398,7 +400,7 @@ class GeneratorApp(QWidget):
 
             # Ensure we are handling the first item in the list
             if recipe_data:
-                formatted_recipe = self.format_recipe(recipe_data[0])  # Access the first recipe item
+                formatted_recipe = self.format_recipe(recipe_data[0])
                 self.result_output.setPlainText(formatted_recipe)
                 self.result_label.clear()
             else:
