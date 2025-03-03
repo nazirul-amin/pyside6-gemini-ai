@@ -1,12 +1,8 @@
 # Gemini Assistant
 
-## Overview
-The Gen AI App is a versatile tool designed to leverage the power of generative AI to simplify tasks such as recipe creation and image generation. With an intuitive user interface, users can easily generate recipes from images, create stunning visuals, and soon, translate text seamlessly. 
-
 ## Features
 - **Generate Recipe from Image:** Upload an image, and the app will analyze it to provide a detailed recipe based on the contents.
 - **Generate Images:** Create unique images from text prompts (coming soon).
-- **Translate Text:** HTTP server for xunity autotranslator to translate unity game.
 
 ## Tech Stack
 - PySide6
